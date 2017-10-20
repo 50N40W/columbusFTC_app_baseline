@@ -92,21 +92,21 @@ public class timeSliceOpMode extends LinearOpMode {
          ***************************************************************************/
 
         //@Override
-        final long SENSORPERIOD= 30;
-        final long ENCODERPERIOD = 25;
-        final long SERVOPERIOD = 35;
-        final long NAVPERIOD = 35;
-        final long MOTORPERIOD = 35;
+        final long SENSORPERIOD= 50;
+        final long ENCODERPERIOD = 50;
+        final long SERVOPERIOD = 50;
+        final long NAVPERIOD = 50;
+        final long MOTORPERIOD = 50;
         final long TELEMETRYPERIOD = 1000;
 
         long CurrentTime=System.currentTimeMillis();
 
         long LastSensor = CurrentTime;
-        long LastEncoderRead = CurrentTime;
-        long LastServo = CurrentTime;
-        long LastNav = CurrentTime;
-        long LastMotor = CurrentTime;
-        long LastTelemetry = CurrentTime;
+        long LastEncoderRead = CurrentTime+5;
+        long LastServo = CurrentTime+10;
+        long LastNav = CurrentTime+15;
+        long LastMotor = CurrentTime+20;
+        long LastTelemetry = CurrentTime+17;
 
         //int overRun1 = 0;
         //int overRun2 = 0;
