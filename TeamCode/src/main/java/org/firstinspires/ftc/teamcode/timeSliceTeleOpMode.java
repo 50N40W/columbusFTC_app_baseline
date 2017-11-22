@@ -129,9 +129,9 @@ public class timeSliceTeleOpMode extends LinearOpMode {
 
         // variables for controller inputs.
         //float g1_leftX;
-        float g1_LeftY;
+        float g1_LeftY = 0;
         //float g1_RightX;
-        float g1_RightY;
+        float g1_RightY = 0;
         int g1_A_Counts = 0;
 
         double leftClamp_Cmd = LEFTUNCLAMPED;
@@ -141,7 +141,7 @@ public class timeSliceTeleOpMode extends LinearOpMode {
         float rightDriveCmd = 0;
         float riserCmd = 0;
 
-        boolean g1_A;
+        boolean g1_A = false;
         //boolean g1_B;
 
         // variables to support clamp and lift
@@ -226,9 +226,10 @@ public class timeSliceTeleOpMode extends LinearOpMode {
                 // a flaky controller or a jittery operator. Splitting out the sensor "reads"
                 // from the rest of the logic let's us do this here, rather than muddling up
                 // the main logic of a more abstract, more complicated piece of code.
-                g1_A_Counts = Range.clip((gamepad1.a)? g1_A_Counts + 1 : g1_A_Counts - 1, 0,12);
+                g1_A_Counts = Range.clip((gamepad1.a) ? g1_A_Counts + 1 : g1_A_Counts - 1, 0, 12);
                 g1_A = (g1_A_Counts >= 6);
                 //g1_B = gamepad1.b;
+            }
         /*  ***********************************************************************
          ^^^^^^^^^^^^^ ALL OF THE STUFF ABOVE HERE IS READING INPUTS ^^^^^^^^^^^^^^^
          ***************************************************************************/
@@ -245,81 +246,81 @@ public class timeSliceTeleOpMode extends LinearOpMode {
              *      Outputs: Servo and Motor position commands
              *                         motor
              ****************************************************/
-                if (CurrentTime - LastNav > NAVPERIOD) {
-                    LastNav = CurrentTime;
+            if (CurrentTime - LastNav > NAVPERIOD) {
+                LastNav = CurrentTime;
 
-                    // init drive min and max to default values.  We'll reset them to other numbers
-                    // if conditions demand it.
-                    float driveMax = 1;
-                    float driveMin = -1;
-                    float riserMax = 1;
-                    float riserMin = -1;
-                    double riserTarget = 0;
+                // init drive min and max to default values.  We'll reset them to other numbers
+                // if conditions demand it.
+                float driveMax = 1;
+                float driveMin = -1;
+                float riserMax = 1;
+                float riserMin = -1;
+                double riserTarget = 0;
 
 
-                    // mapping inputs to servo command
-                    if (g1_A){
-                        // apply a limit to motor speed while the lift operation is in process
-                        driveMax = (float)0.5;
-                        driveMin = (float)-0.5;
+                // mapping inputs to servo command
+                if (g1_A){
+                    // apply a limit to motor speed while the lift operation is in process
+                    driveMax = (float)0.5;
+                    driveMin = (float)-0.5;
 
-                        liftDuration += NAVPERIOD;
-                        liftOffDuration = 0;
+                    liftDuration += NAVPERIOD;
+                    liftOffDuration = 0;
 
-                        leftClamp_Cmd = LEFTCLAMPED;
-                        rightClamp_Cmd = RIGHTCLAMPED;
-                        if (liftDuration > CLAMP_MOTION_TIME) {
-                            // begin lift operation after allowing CLAMP_MOTION_TIME for the servos
-                            // to close.
-                            // using the riser encoder and/or time, put in a PID to get it to the
-                            // right position and stay there.
-                            int posErr = (riserZero + RISER_DISTANCE - riserMotorPos);
-                            prevRiserErr = (prevRiserErr == 0)? posErr : prevRiserErr;
+                    leftClamp_Cmd = LEFTCLAMPED;
+                    rightClamp_Cmd = RIGHTCLAMPED;
+                    if (liftDuration > CLAMP_MOTION_TIME) {
+                        // begin lift operation after allowing CLAMP_MOTION_TIME for the servos
+                        // to close.
+                        // using the riser encoder and/or time, put in a PID to get it to the
+                        // right position and stay there.
+                        int posErr = (riserZero + RISER_DISTANCE - riserMotorPos);
+                        prevRiserErr = (prevRiserErr == 0)? posErr : prevRiserErr;
 
-                            riserTarget = simplePID(posErr, liftDuration, prevRiserErr);
-                            prevRiserErr = posErr;
-                            // can also put in a small left/right adjustment based on bumpers
-                            // BUT: PLEASE don't read the gamepad bumpers here.  This section
-                            // of code has a LOT going on already.  Read the bumpers elsewhere
-                            // and use them as variables here.  Can also use x axis on right stick
-                            // for offset on right servo and x axis on left stick for left servo
-                            // adjustments.  Just an idea.
-                        }
+                        riserTarget = simplePID(posErr, liftDuration, prevRiserErr);
+                        prevRiserErr = posErr;
+                        // can also put in a small left/right adjustment based on bumpers
+                        // BUT: PLEASE don't read the gamepad bumpers here.  This section
+                        // of code has a LOT going on already.  Read the bumpers elsewhere
+                        // and use them as variables here.  Can also use x axis on right stick
+                        // for offset on right servo and x axis on left stick for left servo
+                        // adjustments.  Just an idea.
                     }
-                    else {
-                        liftDuration = (liftDuration > 0) ? liftDuration - NAVPERIOD : 0;
-                        liftOffDuration += NAVPERIOD;
-                        leftClamp_Cmd = LEFTUNCLAMPED;
-                        rightClamp_Cmd = RIGHTUNCLAMPED;
-                        if (liftOffDuration >= CLAMP_MOTION_TIME) {
-                            int riserErr = (riserZero - riserMotorPos);
-                            riserTarget = simplePID(riserErr,liftOffDuration,prevRiserErr);
-                            prevRiserErr = riserErr;
-                            // allow motor to relax
-                        }
+                }
+                else {
+                    liftDuration = (liftDuration > 0) ? liftDuration - NAVPERIOD : 0;
+                    liftOffDuration += NAVPERIOD;
+                    leftClamp_Cmd = LEFTUNCLAMPED;
+                    rightClamp_Cmd = RIGHTUNCLAMPED;
+                    if (liftOffDuration >= CLAMP_MOTION_TIME) {
+                        int riserErr = (riserZero - riserMotorPos);
+                        riserTarget = simplePID(riserErr,liftOffDuration,prevRiserErr);
+                        prevRiserErr = riserErr;
+                        // allow motor to relax
                     }
-                    // mapping inputs to motor commands - cube them to desensetize them around
-                    // the 0,0 point.  Switching to single stick operation ought to be pretty
-                    // straightforward, if that's desired.  Using 2 sticks was simpler to
-                    // code up in a hurry.
-                    g1_LeftY  = g1_LeftY  * g1_LeftY  * g1_LeftY;
-                    g1_RightY = g1_RightY * g1_RightY * g1_RightY;
+                }
+                // mapping inputs to motor commands - cube them to desensetize them around
+                // the 0,0 point.  Switching to single stick operation ought to be pretty
+                // straightforward, if that's desired.  Using 2 sticks was simpler to
+                // code up in a hurry.
+                g1_LeftY  = g1_LeftY  * g1_LeftY  * g1_LeftY;
+                g1_RightY = g1_RightY * g1_RightY * g1_RightY;
 
 
-                    // The ONLY place we set the motor power variables. Set them here, and
-                    // we will never have to worry about which set is clobbering the other.
-                    // I aligned them this way to make it REALLY clear what's going on.
-                    // Should probably think through the logic of doing the same with the servos
-                    // Ideally we'd calculate a desired motor or servo action then apply any
-                    // necessary clamps or limits (or overrides) right before shipping it out.
+                // The ONLY place we set the motor power variables. Set them here, and
+                // we will never have to worry about which set is clobbering the other.
+                // I aligned them this way to make it REALLY clear what's going on.
+                // Should probably think through the logic of doing the same with the servos
+                // Ideally we'd calculate a desired motor or servo action then apply any
+                // necessary clamps or limits (or overrides) right before shipping it out.
 
-                    // Servo commands: Clipped and Clamped.
+                // Servo commands: Clipped and Clamped.
 
-                    // motor commands: Clipped & clamped.
-                    leftDriveCmd  = Range.clip(g1_LeftY,           driveMin, driveMax);
-                    rightDriveCmd = Range.clip(g1_RightY,          driveMin, driveMax);
-                    riserCmd      = Range.clip((float)riserTarget, riserMin, riserMax);
-                }                    // END NAVIGATION
+                // motor commands: Clipped & clamped.
+                leftDriveCmd  = Range.clip(g1_LeftY,           driveMin, driveMax);
+                rightDriveCmd = Range.clip(g1_RightY,          driveMin, driveMax);
+                riserCmd      = Range.clip((float)riserTarget, riserMin, riserMax);
+            }                    // END NAVIGATION
 
 
         /*   ^^^^^^^^^^^^^^^^  THIS SECTION IS MAPPING INPUTS TO OUTPUTS   ^^^^^^^^^^^^^^^*/
@@ -333,55 +334,57 @@ public class timeSliceTeleOpMode extends LinearOpMode {
          * VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV*/
 
 
-            /* **************************************************
-             *                SERVO OUTPUT
-             *                Inputs: leftClamp position command
-             *                        rightClamp position command *
-             *                Outputs: Physical write to servo interface.
-             ****************************************************/
-                if (CurrentTime - LastServo > SERVOPERIOD) {
-                    LastServo = CurrentTime;
+        /* **************************************************
+         *                SERVO OUTPUT
+         *                Inputs: leftClamp position command
+         *                        rightClamp position command *
+         *                Outputs: Physical write to servo interface.
+         ****************************************************/
+            if (CurrentTime - LastServo > SERVOPERIOD) {
+                LastServo = CurrentTime;
 
-                    // Move both servos to new position.
-                    leftClamp.setPosition(leftClamp_Cmd);
-                    rightClamp.setPosition(rightClamp_Cmd);
-                }
-
-
-            /* ***************************************************
-             *                MOTOR OUTPUT
-             *       Inputs:  Motor power commands
-             *       Outputs: Physical interface to the motors
-             ****************************************************/
-                if (CurrentTime - LastMotor > MOTORPERIOD) {
-                    LastMotor = CurrentTime;
-                    // Yes, we'll set the power each time, even if it's zero.
-                    // this way we don't accidentally leave it somewhere.  Just simpler this way.
-                    /*  Left Drive Motor Power  */
-                    leftDrive.setPower(leftDriveCmd);
-
-                    /*  Right Drive Motor Power */
-                    rightDrive.setPower(rightDriveCmd);
-
-                    /* Lifter Motor Power   */
-                    riser.setPower(riserCmd);
-                }
-
-
-            /* ***************************************************
-             *                TELEMETRY
-             *       Inputs:  telemetry structure
-             *       Outputs: command telemetry output to phone
-             ****************************************************/
-
-                if (CurrentTime - LastTelemetry > TELEMETRYPERIOD) {
-                    LastTelemetry = CurrentTime;
-                    telemetry.update();
-                }
+                // Move both servos to new position.
+                leftClamp.setPosition(leftClamp_Cmd);
+                rightClamp.setPosition(rightClamp_Cmd);
             }
 
-            telemetry.addData("Path", "Complete");
-            telemetry.update();
-        }
+
+        /* ***************************************************
+         *                MOTOR OUTPUT
+         *       Inputs:  Motor power commands
+         *       Outputs: Physical interface to the motors
+         ****************************************************/
+            if (CurrentTime - LastMotor > MOTORPERIOD) {
+                LastMotor = CurrentTime;
+                // Yes, we'll set the power each time, even if it's zero.
+                // this way we don't accidentally leave it somewhere.  Just simpler this way.
+                /*  Left Drive Motor Power  */
+                leftDrive.setPower(leftDriveCmd);
+
+                /*  Right Drive Motor Power */
+                rightDrive.setPower(rightDriveCmd);
+
+                /* Lifter Motor Power   */
+                riser.setPower(riserCmd);
+            }
+
+
+        /* ***************************************************
+         *                TELEMETRY
+         *       Inputs:  telemetry structure
+         *       Outputs: command telemetry output to phone
+         ****************************************************/
+
+            if (CurrentTime - LastTelemetry > TELEMETRYPERIOD) {
+                LastTelemetry = CurrentTime;
+                telemetry.update();
+            }
+
+        } // end of "while opmode is active" //
+
+        telemetry.addData("Path", "Complete");
+        telemetry.update();
     }
+
+
 }
