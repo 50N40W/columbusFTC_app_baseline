@@ -43,7 +43,7 @@ import org.firstinspires.ftc.robotcontroller.external.samples.HardwarePushbot;
 
  */
 
-@Autonomous(name="Time Slide Op Mode", group="Pushbot")
+@Autonomous(name="Time Slice Op Mode", group="Pushbot")
 //@Disabled
 public class timeSliceOpMode extends LinearOpMode {
 
